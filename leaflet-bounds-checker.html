@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Leaflet Bounds Checker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/> 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+</head>
+<body>
+    <div id="container" style="display:flex">
+        <div id="map" style="height:1024px; width:1024px;"></div>
+        <div id="info" style="padding-left: 1rem; width: 400px;">
+            <h1>Simple Leaflet Bounds Checker</h1>
+            <p>Checks if the map is panned or zoomed too far, and the map edge or 'World Bounds' is visible within the map's container. Useful for validating whether the returned bounds of a Leaflet map have been cropped to account for values outside of the Mercator projection, ie. greater than +90/-90 degrees latitude.</p>
+            <h2>Controls</h2>
+            <button id="fitworld">Fit world</button>
+            <h2>Info</h2>
+            <h3>Container Bounds</h3>
+            <p id="containerBounds"></p>
+            <h3>Pixel Bounds Top Left</h3>
+            <p id="pixelBoundsTopleft"></p>
+            <h3>Pixel Bounds Bottom Right</h3>
+            <p id="pixelBoundsBottomright"></p>
+            <h3>Pixel World Bounds Top Left</h3>
+            <p id="pixelWorldBoundsTopLeft"></p>
+            <h3>Pixel World Bounds Bottom Right</h3>
+            <p id="pixelWorldBoundsBottomRight"></p>
+            <h3 id="outOfBounds" style="color:red"></h3>
+        </div>
+    </div>
+</body>
+<script>
+
+    const fitWorldButton = document.getElementById('fitworld');
+    const containerBoundsPanel = document.getElementById('containerBounds');
+    const pixelBoundsTopLeftPanel = document.getElementById('pixelBoundsTopleft');
+    const pixelBoundsBottomRightPanel = document.getElementById('pixelBoundsBottomright');
+    const pixelWorldBoundsTopLeftPanel = document.getElementById('pixelWorldBoundsTopLeft');
+    const pixelWorldBoundsBottomRightPanel = document.getElementById('pixelWorldBoundsBottomRight');
+    const outOfBoundsHeading = document.getElementById('outOfBounds');
+    const mapElement = document.getElementById('map');
+
+    const updateInfo = function() {
+
+        let height = 1024;
+        let width = 1024;
+
+        let containerBoundsNEInfo = JSON.stringify(map.getBounds().getNorthEast());
+        let containerBoundsSWInfo = JSON.stringify(map.getBounds().getSouthWest());
+
+        containerBoundsPanel.innerHTML = 'Top Left <br>' + containerBoundsNEInfo + '<br><br>Bottom Right <br>' + containerBoundsSWInfo;
+
+        let pixelBoundsTopLeftInfo = map.getPixelBounds().getTopLeft();
+        pixelBoundsTopLeftPanel.innerText = pixelBoundsTopLeftInfo;
+
+        let pixelBoundsBottomRightInfo = map.getPixelBounds().getBottomRight();
+        pixelBoundsBottomRightPanel.innerText = pixelBoundsBottomRightInfo;
+
+        let pixelWorldBoundsTopLeftInfo = map.getPixelWorldBounds().getTopLeft();
+        pixelWorldBoundsTopLeftPanel.innerText = pixelWorldBoundsTopLeftInfo;
+
+        let pixelWorldBoundsBottomRightInfo = map.getPixelWorldBounds().getBottomRight();
+        pixelWorldBoundsBottomRightPanel.innerText = pixelWorldBoundsBottomRightInfo;
+       
+        if ((pixelBoundsTopLeftInfo.y < 0) || pixelBoundsBottomRightInfo.y > pixelWorldBoundsBottomRightInfo.y) {
+            mapElement.style.background = 'red';
+            outOfBoundsHeading.innerText = "World Bounds Visible";
+        } else { 
+            mapElement.style.background = "#ddd";
+            outOfBoundsHeading.innerText = '';
+        }
+
+    }
+
+    var map = L.map('map').setView([51.505, -0.09], 4);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    map.on('moveend', updateInfo);
+    map.on('zoomend', updateInfo);
+
+    const fitWorld = function() {
+        map.fitWorld();
+    }
+
+    fitWorldButton.addEventListener('click', fitWorld);
+
+    updateInfo();
+   
+</script>
+</html>
